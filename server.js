@@ -19,12 +19,16 @@ io.sockets.on('connection', function(socket) {
     console.log('Polaczenie');
 
     socket.on('draw', function(data) {
-        console.log('draw x - '+data.x+' y - '+data.y);
+        console.log('draw x - '+data.mouse.x+' y - '+data.mouse.y);
         socket.broadcast.emit('draw', data);
     });
 
     socket.on('clear',function () {
         console.log('clear');
         socket.broadcast.emit('clear');
+    });
+
+    socket.on('tool',function () {
+       socket.broadcast.emit('tool');
     });
 });

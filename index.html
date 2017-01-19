@@ -6,24 +6,32 @@
             integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
             crossorigin="anonymous"></script>
     <script src="/socket.io/socket.io.js"></script>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+            crossorigin="anonymous"></script>
     <script>
         var socket = io();
     </script>
     <script>
         var mouse = {
-            x:0,
-            y:0,
-            last_x:0,
-            last_y:0,
-            isPressed:false
+            x: 0,
+            y: 0,
+            last_x: 0,
+            last_y: 0,
+            isPressed: false
+        };
+
+        var tool = {
+            size: 2,
+            color: {R: 0, G: 0, B: 0}
         };
 
         function init() {
             canvas = document.getElementById('canvas');
             ctx = document.getElementById('canvas').getContext('2d');
-
+            $('#color').css('background-color', 'rgb(' + tool.color.R + ',' + tool.color.G + ',' + tool.color.B + ')');
 
             $('#canvas').mousedown(function (e) {
                 mouse.isPressed = true;
@@ -32,10 +40,10 @@
             });
 
             $('#canvas').mousemove(function (e) {
-                if(mouse.isPressed) {
+                if (mouse.isPressed) {
                     getCursorPosition(e);
-                    socket.emit('draw', mouse);
-                    draw(mouse, true);
+                    socket.emit('draw', {mouse: mouse, tool: tool});
+                    draw(mouse, tool, true);
                 }
             });
 
@@ -44,20 +52,21 @@
             });
 
         }
-        
-        function drawDot(x,y,size,ctx){
+
+        function drawDot(x, y, size, ctx) {
             ctx.beginPath();
-            ctx.arc(x, y, size, 0, Math.PI*2, true);
+            ctx.arc(x, y, size, 0, Math.PI * 2, true);
             ctx.closePath();
             ctx.fill();
         }
 
-        function draw(mouse, isDown) {
+        function draw(mouse, tool, isDown) {
             console.log(mouse.last_x);
-            if(isDown === true) {
+            if (isDown === true) {
                 ctx.beginPath();
                 ctx.lineJoin = "round";
-                ctx.lineWidth = 3;
+                ctx.strokeStyle = 'rgb(' + tool.color.R + ',' + tool.color.G + ',' + tool.color.B + ')';
+                ctx.lineWidth = tool.size;
                 ctx.moveTo(mouse.x, mouse.y);
                 ctx.lineTo(mouse.last_x, mouse.last_y);
                 ctx.closePath();
@@ -67,9 +76,29 @@
             mouse.last_y = mouse.y;
         }
 
-        function clearCanvas(canvas,ctx) {
+        function clearCanvas(canvas, ctx) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+        }
+
+        function updateTool() {
+            var size = $('#size').val();
+            $('#size_value').val(size);
+            tool.size = size;
+
+            var R = $('#color_r').val();
+            $('#color_r_val').val(R);
+            tool.color.R = R;
+
+            var G = $('#color_g').val();
+            $('#color_g_val').val(G);
+            tool.color.G = G;
+
+            var B = $('#color_b').val();
+            $('#color_b_val').val(B);
+            tool.color.B = B;
+
+            $('#color').css('background-color', 'rgb(' + tool.color.R + ',' + tool.color.G + ',' + tool.color.B + ')');
         }
 
         function getCursorPosition(e) {
@@ -79,28 +108,98 @@
 
         function clearScreen() {
             console.log('clear');
-            clearCanvas(canvas,ctx);
+            clearCanvas(canvas, ctx);
             socket.emit('clear');
         }
 
-        socket.on('draw',function (data) {
+        socket.on('draw', function (data) {
             console.log(data);
-            draw(data,true);
+            draw(data.mouse, data.tool, true);
         });
 
-        socket.on('clear',function () {
-            clearCanvas(canvas,ctx);
+        socket.on('clear', function () {
+            clearCanvas(canvas, ctx);
         });
-        
+
     </script>
     <title>Multi Paint</title>
 </head>
 <body onload="init();">
+<main class="container">
     <h1>Multi Paint</h1>
-    <main>
-        <canvas id="canvas" width="800" height="600" style="border:1px solid #000;">
-        </canvas>
-        <button onclick="clearScreen();">Wyczyść</button>
-    </main>
+    <div class="row">
+        <div class="col-sm-4">
+            <div class="panel panel-default">
+                <div class="panel panel-heading">
+                    Pędzel
+                </div>
+                <div class="panel-body">
+                    <form class="form form-inline form-multiline" role="form">
+                        <div class="row">
+                            <label for="size" class="text-center">Rozmiar:</label>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-9">
+                                <input type="range" id="size" class="form-control" value="3" min="1" max="40"
+                                       onchange="updateTool();">
+                            </div>
+                            <div class="col-md-3">
+                                <input class="form-control" type="number" id="size_value" value="3" maxlength="3"
+                                       size="3" style="width: 85px;">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-9">
+                                <label for="size">R:</label>
+                                <input class="form-control" type="range" id="color_r" class="form-control" value="0"
+                                       min="0" max="255" onchange="updateTool();">
+                            </div>
+                            <div class="col-md-2">
+                                <input class="form-control" type="number" id="color_r_val" value="3" maxlength="3"
+                                       size="3" style="width: 85px;">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-9">
+                                <label for="size">G:</label>
+                                <input class="form-control" type="range" id="color_g" class="form-control" value="0"
+                                       min="0" max="255" onchange="updateTool();">
+                            </div>
+                            <div class="col-md-2">
+                                <input class="form-control" type="number" id="color_g_val" value="3" maxlength="3"
+                                       size="3" style="width: 85px;">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-9">
+                                <label for="size">B:</label>
+                                <input class="form-control" type="range" id="color_b" class="form-control" value="0"
+                                       min="0" max="255" onchange="updateTool();">
+                            </div>
+                            <div class="col-md-2">
+                                <input class="form-control" type="number" id="color_b_val" value="3" maxlength="3"
+                                       size="3" style="width: 85px;">
+                            </div>
+                        </div>
+                    </form>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <canvas id="color" width="200" height="30" style="border:1px solid #000;margin: 20px auto 10px auto;"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-footer">
+                    <div class="btn-group">
+                        <button class="btn btn-default" onclick="clearScreen();"><span class="glyphicon glyphicon-trash"></span> Wyczyść</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-8">
+            <canvas id="canvas" width="800" height="600" style="border:1px solid #000;">
+            </canvas>
+        </div>
+    </div>
+</main>
 </body>
 </html>
