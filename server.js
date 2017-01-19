@@ -19,7 +19,7 @@ io.sockets.on('connection', function(socket) {
     console.log('Polaczenie');
 
     socket.on('draw', function(data) {
-        console.log('draw x - '+data.mouse.x+' y - '+data.mouse.y);
+        console.log('draw x - '+data.x+' y - '+data.y);
         socket.broadcast.emit('draw', data);
     });
 

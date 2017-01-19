@@ -6,6 +6,8 @@
             integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
             crossorigin="anonymous"></script>
     <script src="/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
     <script>
         var socket = io();
     </script>
@@ -30,8 +32,9 @@
             });
 
             $('#canvas').mousemove(function (e) {
-                getCursorPosition(e);
                 if(mouse.isPressed) {
+                    getCursorPosition(e);
+                    socket.emit('draw', mouse);
                     draw(mouse, true);
                 }
             });
@@ -59,8 +62,6 @@
                 ctx.lineTo(mouse.last_x, mouse.last_y);
                 ctx.closePath();
                 ctx.stroke();
-
-                socket.emit('draw', { mouse: mouse, isDown: isDown});
             }
             mouse.last_x = mouse.x;
             mouse.last_y = mouse.y;
@@ -68,7 +69,7 @@
 
         function clearCanvas(canvas,ctx) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            socket.emit('clear');
+
         }
 
         function getCursorPosition(e) {
@@ -76,8 +77,15 @@
             mouse.y = e.offsetY;
         }
 
+        function clearScreen() {
+            console.log('clear');
+            clearCanvas(canvas,ctx);
+            socket.emit('clear');
+        }
+
         socket.on('draw',function (data) {
-           draw(data.mouse,data.isDown);
+            console.log(data);
+            draw(data,true);
         });
 
         socket.on('clear',function () {
@@ -92,7 +100,7 @@
     <main>
         <canvas id="canvas" width="800" height="600" style="border:1px solid #000;">
         </canvas>
-        <button onclick="clearCanvas(canvas,ctx)">Wyczyść</button>
+        <button onclick="clearScreen();">Wyczyść</button>
     </main>
 </body>
 </html>
