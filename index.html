@@ -13,7 +13,9 @@
         var mouse = {
             x:0,
             y:0,
-            isDown:false
+            last_x:0,
+            last_y:0,
+            isPressed:false
         };
 
         function init() {
@@ -22,21 +24,20 @@
 
 
             $('#canvas').mousedown(function (e) {
+                mouse.isPressed = true;
                 getCursorPosition(e);
-                drawDot(mouse.x,mouse.y,2,ctx);
-                mouse.isDown = true;
+                draw(mouse, false);
             });
 
             $('#canvas').mousemove(function (e) {
-                if(mouse.isDown === true){
-                    getCursorPosition(e);
-                    drawDot(mouse.x,mouse.y,3,ctx);
-                    socket.emit('draw',{x: mouse.x, y: mouse.y});
+                getCursorPosition(e);
+                if(mouse.isPressed) {
+                    draw(mouse, true);
                 }
             });
 
             $('#canvas').mouseup(function (e) {
-                mouse.isDown = false;
+                mouse.isPressed = false;
             });
 
         }
@@ -46,6 +47,23 @@
             ctx.arc(x, y, size, 0, Math.PI*2, true);
             ctx.closePath();
             ctx.fill();
+        }
+
+        function draw(mouse, isDown) {
+            console.log(mouse.last_x);
+            if(isDown === true) {
+                ctx.beginPath();
+                ctx.lineJoin = "round";
+                ctx.lineWidth = 3;
+                ctx.moveTo(mouse.x, mouse.y);
+                ctx.lineTo(mouse.last_x, mouse.last_y);
+                ctx.closePath();
+                ctx.stroke();
+
+                socket.emit('draw', { mouse: mouse, isDown: isDown});
+            }
+            mouse.last_x = mouse.x;
+            mouse.last_y = mouse.y;
         }
 
         function clearCanvas(canvas,ctx) {
@@ -59,7 +77,7 @@
         }
 
         socket.on('draw',function (data) {
-           drawDot(data.x, data.y, 3, ctx);
+           draw(data.mouse,data.isDown);
         });
 
         socket.on('clear',function () {
