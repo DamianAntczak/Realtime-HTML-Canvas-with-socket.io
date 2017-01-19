@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"
+            integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+            crossorigin="anonymous"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var socket = io();
+    </script>
+    <script>
+        var mouse = {
+            x:0,
+            y:0,
+            isDown:false
+        };
+
+        function init() {
+            canvas = document.getElementById('canvas');
+            ctx = document.getElementById('canvas').getContext('2d');
+
+
+            $('#canvas').mousedown(function (e) {
+                getCursorPosition(e);
+                drawDot(mouse.x,mouse.y,2,ctx);
+                mouse.isDown = true;
+            });
+
+            $('#canvas').mousemove(function (e) {
+                if(mouse.isDown === true){
+                    getCursorPosition(e);
+                    drawDot(mouse.x,mouse.y,3,ctx);
+                    socket.emit('draw',{x: mouse.x, y: mouse.y});
+                }
+            });
+
+            $('#canvas').mouseup(function (e) {
+                mouse.isDown = false;
+            });
+
+        }
+        
+        function drawDot(x,y,size,ctx){
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI*2, true);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function clearCanvas(canvas,ctx) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            socket.emit('clear');
+        }
+
+        function getCursorPosition(e) {
+            mouse.x = e.offsetX;
+            mouse.y = e.offsetY;
+        }
+
+        socket.on('draw',function (data) {
+           drawDot(data.x, data.y, 3, ctx);
+        });
+
+        socket.on('clear',function () {
+            clearCanvas(canvas,ctx);
+        });
+        
+    </script>
+    <title>Multi Paint</title>
+</head>
+<body onload="init();">
+    <h1>Multi Paint</h1>
+    <main>
+        <canvas id="canvas" width="800" height="600" style="border:1px solid #000;">
+        </canvas>
+        <button onclick="clearCanvas(canvas,ctx)">Wyczyść</button>
+    </main>
+</body>
+</html>
