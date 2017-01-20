@@ -6,7 +6,7 @@ var app = require('http').createServer(handler)
     ,fs = require('fs')
     ,io = require('socket.io').listen(app);
 
-app.listen(8081);
+app.listen(80);
 
 function handler(req, res) {
     fs.readFile('index.html', function(err, data) {
@@ -30,5 +30,9 @@ io.sockets.on('connection', function(socket) {
 
     socket.on('tool',function () {
        socket.broadcast.emit('tool');
+    });
+
+    socket.on('fill',function (data) {
+       socket.broadcast.emit('fill', data);
     });
 });

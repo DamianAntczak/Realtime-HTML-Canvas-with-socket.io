@@ -111,6 +111,17 @@
             socket.emit('clear');
         }
 
+        function fillCanvas(tool) {
+            ctx.fillStyle = 'rgb(' + tool.color.R + ',' + tool.color.G + ',' + tool.color.B + ')';
+            ctx.fillRect(0,0, canvas.width, canvas.height);
+            ctx.stroke();
+        }
+
+        function fill() {
+            fillCanvas(tool);
+            socket.emit('fill',tool);
+        }
+
         socket.on('draw', function (data) {
             console.log(data);
             draw(data.mouse, data.tool, true);
@@ -118,6 +129,11 @@
 
         socket.on('clear', function () {
             clearCanvas(canvas, ctx);
+        });
+
+        socket.on('fill',function (data) {
+            console.log('fill');
+            fillCanvas(data);
         });
 
     </script>
@@ -183,13 +199,14 @@
                     </form>
                     <div class="row">
                         <div class="col-sm-12">
-                            <canvas id="color" width="200" height="30" style="border:1px solid #000;margin: 20px auto 10px auto;"></canvas>
+                            <canvas id="color" width="185" height="30" style="border:1px solid #000;margin: 20px auto 10px auto;"></canvas>
                         </div>
                     </div>
                 </div>
                 <div class="panel-footer">
                     <div class="btn-group">
                         <button class="btn btn-default" onclick="clearScreen();"><span class="glyphicon glyphicon-trash"></span> Wyczyść</button>
+                        <button class="btn btn-default" onclick="fill();">Wypełnij</button>
                     </div>
                 </div>
             </div>
